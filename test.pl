@@ -6,7 +6,8 @@ use strict;
 use warnings;
 
 ### Global variables...
-my $debug = 0;
+my $debug = 0; #print debug messages to screen
+my $debugout = 1; # include a copy of each input line as a comment in the out file.
 my %values = ();
 my $incr = 1; # positive incriment of line numbers - change to match input file.
 my $linenumber = 0;
@@ -25,14 +26,7 @@ sub plnum { #print line numbers
 
 
 sub peck {
-	print"peck\n";
-# decided not to use parameters... look for globals 
-#	my $vx = $_[0];
-#	my $vy = $_[1];
-#	my $vz = $_[2];
-#	my $vr = $_[3];
-#	my $vq = $_[2];
-
+	if($debug){print"peck\n";}
 	print OUTFILE "G0 X";
 	print OUTFILE $values{"X"};
 	print OUTFILE " Y";
@@ -41,10 +35,6 @@ sub peck {
 	print OUTFILE $ztraverse;
 	print OUTFILE " ;\n";
 	#####peck logic here....
-#	$linenumber = $linenumber + $incr;
-#	print OUTFILE "N";
-#	print OUTFILE $values{"N"} + $linenumber;
-#	print OUTFILE " ";
 	&plnum;
 	print OUTFILE "G0 Z";
 	print OUTFILE $values{"R"};
@@ -55,10 +45,6 @@ sub peck {
 	$drilled_distance = $drilled_distance - $values{"Q"};
 	if($drilled_distance < $zhole){ $drilled_distance = $zhole;}
 		&plnum;
-#	$linenumber = $linenumber + $incr;
-#	print OUTFILE "N";
-#	print OUTFILE $values{"N"} + $linenumber;
-#	print OUTFILE " G1 Z";
 	print OUTFILE "G1 Z";
 	print OUTFILE $drilled_distance ;
 	print OUTFILE " F";
@@ -66,20 +52,12 @@ sub peck {
 	print OUTFILE " ;\n";
 	if($drilled_distance < $zhole){ $drilled_distance = $zhole;}
 		&plnum;
-#	$linenumber = $linenumber + $incr;
-#	print OUTFILE "N";
-#	print OUTFILE $values{"N"} + $linenumber;
-#	print OUTFILE " G0 Z";
 	print OUTFILE "G0 Z";
 	print OUTFILE $values{"R"};
 	print OUTFILE " "; # \n comes in the simicolon logic or below.
 	if($drilled_distance != $zhole){ # back into the hole if we have more to drill.
 		print OUTFILE ";\n";
 		&plnum;
-#		$linenumber = $linenumber + $incr;
-#		print OUTFILE "N";
-#		print OUTFILE $values{"N"} + $linenumber;
-#		print OUTFILE " G0 Z";
 		print OUTFILE "G0 Z";
 		print OUTFILE $drilled_distance +.01 ;
 		print OUTFILE " ;\n"; 
@@ -120,7 +98,7 @@ while(<INFILE>) {
 	
 	if ( $line =~ s/[(]+.*[)]+// ) {
 	$cmt = $&;
-	print "Comment $cmt\n";
+if($debug) {	print "Comment $cmt\n"; }
 	$comment = 1;
 	}
 	if ( $line =~ s/[;]+.*$//) {
@@ -138,64 +116,15 @@ while(<INFILE>) {
 		if( uc($&) eq "G"){ 
 			$token = "$_ ";
 
-			print "g$_ "; 
+if($debug){		print "g$_ "; }
 			if( $' == 80) { 
 				$canned = 0; 
 				$token = ""; #don't output the command
 			# also if $moved then also process the line so far
 				if($move){
-					print "PROCESS MOVE BEFORE G80\n";
+if($debug){				print "PROCESS MOVE BEFORE G80\n";}
 					$move = 0; #clear the $move flag
 					&peck;
-#					print OUTFILE "G0 X";
-#					print OUTFILE $values{"X"};
-#					print OUTFILE " Y";
-#					print OUTFILE $values{"Y"};
-#					print OUTFILE " Z";
-#					print OUTFILE $ztraverse;
-#					print OUTFILE " ;\n";
-#				#####peck logic here....
-#					$linenumber = $linenumber + $incr;
-#					print OUTFILE "N";
-#					print OUTFILE $values{"N"} + $linenumber;
-#					print OUTFILE " ";
-#					print OUTFILE "G0 Z";
-#					print OUTFILE $values{"R"};
-#					print OUTFILE " ;\n";
-#				my $zhole = $values{"Z"};
-#				my $drilled_distance = $values{"R"};
-#				while ($zhole != $drilled_distance){
-#					$drilled_distance = $drilled_distance - $values{"Q"};
-#					if($drilled_distance < $zhole){ $drilled_distance = $zhole;}
-#					$linenumber = $linenumber + $incr;
-#					print OUTFILE "N";
-#					print OUTFILE $values{"N"} + $linenumber;
-#					print OUTFILE " G1 Z";
-#					print OUTFILE $drilled_distance ;
-#					print OUTFILE " F";
-#					print OUTFILE $values{"F"};
-#					print OUTFILE " ;\n";
-#					if($drilled_distance < $zhole){ $drilled_distance = $zhole;}
-#					$linenumber = $linenumber + $incr;
-#					print OUTFILE "N";
-#					print OUTFILE $values{"N"} + $linenumber;
-#					print OUTFILE " G0 Z";
-#					print OUTFILE $values{"R"};
-#					print OUTFILE " ;\n";
-#					if($drilled_distance != $zhole){ # back into the hole if we have more to drill.
-#					$linenumber = $linenumber + $incr;
-#						print OUTFILE "N";
-#						print OUTFILE $values{"N"} + $linenumber;
-#						print OUTFILE " G0 Z";
-#						print OUTFILE $drilled_distance +.01 ;
-#						print OUTFILE " ;\n";
-#					}
-#					
-#				} # end while..
-#
-#
-#
-#
 				} #end if ($move)
 			} 
 			if($' == 83) {
@@ -216,18 +145,18 @@ while(<INFILE>) {
 		}else{
 			if(uc($&) ne "N"){ 
 				$move = 1; 
-				print "v$_ ";
+if ($debug){			print "v$_ ";}
 				if(!$canned){ print OUTFILE "$_ ";}
 			}else{
 				$numbered = 1;
-				print "n$_ ";
+if ($debug){			print "n$_ ";}
 				print OUTFILE "N";
 				print OUTFILE $linenumber + $';
 				print OUTFILE " ";
 			}
 		}
 	}else{
-		print "?$_ ";
+if ($debug){	print "?$_ ";}
 		print OUTFILE "$_ ";
 	}
 	
@@ -238,11 +167,16 @@ while(<INFILE>) {
 		if($move){ &peck ;}
 	}
 	if($semicolon) { print OUTFILE "$sccmt" ;}	
-	print OUTFILE " (" ;	
-	print OUTFILE "$line";
+if($debugout){
+		print OUTFILE " (" ;	
+		print OUTFILE "$line";
+	}
 	if($comment) {print OUTFILE "$cmt";}  # relocate comment to end
-	print OUTFILE ")" ;	
-	print OUTFILE "\n";
+if($debugout){ 	print OUTFILE ")" ;}
+
+	print OUTFILE "\n"; #done with this line!!
+	if (!$debug){ print ".";}
 
 }
-print %values;
+if ($debug){print %values;}
+print"\n";
