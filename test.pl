@@ -6,10 +6,23 @@ use strict;
 use warnings;
 
 ### Global variables...
+my $debug = 0;
 my %values = ();
-my $incr = 5;
+my $incr = 1; # positive incriment of line numbers - change to match input file.
 my $linenumber = 0;
+my $numbered = 0;
 my $ztraverse = 1; #zero is probably a bad safety height, assume Z goes negative into work piece so positive is above it.
+
+sub plnum { #print line numbers
+
+	if($numbered){
+		$linenumber = $linenumber + $incr;
+		print OUTFILE "N";
+		print OUTFILE $values{"N"} + $linenumber;
+		print OUTFILE " ";
+	}
+}
+
 
 sub peck {
 	print"peck\n";
@@ -28,10 +41,11 @@ sub peck {
 	print OUTFILE $ztraverse;
 	print OUTFILE " ;\n";
 	#####peck logic here....
-	$linenumber = $linenumber + $incr;
-	print OUTFILE "N";
-	print OUTFILE $values{"N"} + $linenumber;
-	print OUTFILE " ";
+#	$linenumber = $linenumber + $incr;
+#	print OUTFILE "N";
+#	print OUTFILE $values{"N"} + $linenumber;
+#	print OUTFILE " ";
+	&plnum;
 	print OUTFILE "G0 Z";
 	print OUTFILE $values{"R"};
 	print OUTFILE " ;\n";
@@ -40,27 +54,33 @@ sub peck {
 	while ($zhole != $drilled_distance){
 	$drilled_distance = $drilled_distance - $values{"Q"};
 	if($drilled_distance < $zhole){ $drilled_distance = $zhole;}
-	$linenumber = $linenumber + $incr;
-	print OUTFILE "N";
-	print OUTFILE $values{"N"} + $linenumber;
-	print OUTFILE " G1 Z";
+		&plnum;
+#	$linenumber = $linenumber + $incr;
+#	print OUTFILE "N";
+#	print OUTFILE $values{"N"} + $linenumber;
+#	print OUTFILE " G1 Z";
+	print OUTFILE "G1 Z";
 	print OUTFILE $drilled_distance ;
 	print OUTFILE " F";
 	print OUTFILE $values{"F"};
 	print OUTFILE " ;\n";
 	if($drilled_distance < $zhole){ $drilled_distance = $zhole;}
-	$linenumber = $linenumber + $incr;
-	print OUTFILE "N";
-	print OUTFILE $values{"N"} + $linenumber;
-	print OUTFILE " G0 Z";
+		&plnum;
+#	$linenumber = $linenumber + $incr;
+#	print OUTFILE "N";
+#	print OUTFILE $values{"N"} + $linenumber;
+#	print OUTFILE " G0 Z";
+	print OUTFILE "G0 Z";
 	print OUTFILE $values{"R"};
 	print OUTFILE " "; # \n comes in the simicolon logic or below.
 	if($drilled_distance != $zhole){ # back into the hole if we have more to drill.
 		print OUTFILE ";\n";
-		$linenumber = $linenumber + $incr;
-		print OUTFILE "N";
-		print OUTFILE $values{"N"} + $linenumber;
-		print OUTFILE " G0 Z";
+		&plnum;
+#		$linenumber = $linenumber + $incr;
+#		print OUTFILE "N";
+#		print OUTFILE $values{"N"} + $linenumber;
+#		print OUTFILE " G0 Z";
+		print OUTFILE "G0 Z";
 		print OUTFILE $drilled_distance +.01 ;
 		print OUTFILE " ;\n"; 
 		
@@ -73,7 +93,7 @@ sub peck {
 
 }
 my $canned = 0;
-my $numbered = 0;
+##my $numbered = 0; # uncomment this to not put line numbers on the canned output.
 my $comment = 0;
 my $cmt ="";
 my $token = "";
