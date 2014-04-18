@@ -1,6 +1,9 @@
 ##  Copyright Skip McDonald 17 April 2014 - License Creative Commons
 ##  Non-Commercial use permitted with attribution.
 ##  Convert Canned G83 sequences to equivalent G codes for platforms that don't support canned sequences.
+####To Do:
+##  Dwell Pxx.xx sequence is ignored - sorry   will convert to G4 some time.
+##  only converts G83 and not G81 - another program does that fine we just need to combine them.
 
 use strict;
 use warnings;
@@ -13,6 +16,7 @@ my $incr = 1; # positive incriment of line numbers - change to match input file.
 my $linenumber = 0;
 my $numbered = 0;
 my $ztraverse = 1; #zero is probably a bad safety height, assume Z goes negative into work piece so positive is above it.
+   $values{"P"} = 0;  #set dwell time to zero for canned sequences
 
 sub plnum { #print line numbers
 
@@ -113,7 +117,13 @@ if($debug) {	print "Comment $cmt\n"; }
 
 	 	$index = uc($&);
 		$values{$index} = 0 + $'; # the numeric value of $' not its length
-		if( uc($&) eq "G"){ 
+		if($canned && ($index eq "R")){
+			if($ztraverse < (0 + $')){
+				$ztraverse = 0 + $';
+			}
+		} ##fix the case where R is higher than Z traverse
+#		if( uc($&) eq "G"){ 
+		if( $index eq "G"){ 
 			$token = "$_ ";
 
 if($debug){		print "g$_ "; }
@@ -143,7 +153,8 @@ if($debug){				print "PROCESS MOVE BEFORE G80\n";}
 			print OUTFILE "$token";
 
 		}else{
-			if(uc($&) ne "N"){ 
+#			if(uc($&) ne "N"){ 
+			if($index ne "N"){ 
 				$move = 1; 
 if ($debug){			print "v$_ ";}
 				if(!$canned){ print OUTFILE "$_ ";}
