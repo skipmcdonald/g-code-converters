@@ -17,6 +17,7 @@ my $linenumber = 0;
 my $numbered = 0;
 my $spaces = 0;
 my $ztraverse = 1; #zero is probably a bad safety height, assume Z goes negative into work piece so positive is above it.
+   $values{"Z"} = 0;  #avoid error when no value of Z exists prior to G83
 my $dwell = 0; # no dwell
 my $semicolon = 0;
 
@@ -34,6 +35,7 @@ sub pspace {
 	}
 	
 }
+
 sub plnum { #print line numbers
 
 	if($numbered){
@@ -41,26 +43,31 @@ sub plnum { #print line numbers
 		print OUTFILE "N";
 		print OUTFILE $values{"N"} + $linenumber;
 		&pspace;
-#		print OUTFILE " ";
 	}
 }
 
 
 sub peck {
 	if($debug){print"peck\n";}
-	print OUTFILE "G0 X";
+	print OUTFILE "G0";
+	&pspace;
+	print OUTFILE "X";
 	print OUTFILE $values{"X"};
-	print OUTFILE " Y";
+	&pspace;
+	print OUTFILE "Y";
 	print OUTFILE $values{"Y"};
-	print OUTFILE " Z";
+	&pspace;
+	print OUTFILE "Z";
 	print OUTFILE $ztraverse;
-	print OUTFILE " ";
+	&pspace;
 	&pnlsemi;
 	#####peck logic here....
 	&plnum;
-	print OUTFILE "G0 Z";
+	print OUTFILE "G0";
+	&pspace;
+	print OUTFILE "Z";
 	print OUTFILE $values{"R"};
-	print OUTFILE " ";
+	&pspace;
 	&pnlsemi;
 	my $zhole = $values{"Z"};
 	my $drilled_distance = $values{"R"};
@@ -68,30 +75,39 @@ sub peck {
 	$drilled_distance = $drilled_distance - $values{"Q"};
 	if($drilled_distance < $zhole){ $drilled_distance = $zhole;}
 		&plnum;
-	print OUTFILE "G1 Z";
+	print OUTFILE "G1";
+	&pspace;
+	print OUTFILE "Z";
 	print OUTFILE $drilled_distance ;
-	print OUTFILE " F";
+	&pspace;
+	print OUTFILE "F";
 	print OUTFILE $values{"F"};
-	print OUTFILE " ";
+	&pspace;
 	&pnlsemi;
 	if($dwell > 0){
 		&plnum;
-		print OUTFILE "G4 P"; ## I think P is the right dwell parameter
+		print OUTFILE "G4P"; ## I think P is the right dwell parameter
+		&pspace;
+		print OUTFILE "P"; ## I think P is the right dwell parameter
 		print OUTFILE $dwell;
-		print OUTFILE " ";
+		&pspace;
 		&pnlsemi;
 	}
 	if($drilled_distance < $zhole){ $drilled_distance = $zhole;}
 		&plnum;
-	print OUTFILE "G0 Z";
+	print OUTFILE "G0";
+	&pspace;
+	print OUTFILE "Z";
 	print OUTFILE $values{"R"};
-	print OUTFILE " "; # \n comes in the simicolon logic or below.
+	&pspace;
 	if($drilled_distance != $zhole){ # back into the hole if we have more to drill.
 		&pnlsemi;
 		&plnum;
-		print OUTFILE "G0 Z";
+		print OUTFILE "G0";
+		&pspace;
+		print OUTFILE "Z";
 		print OUTFILE $drilled_distance +.01 ;
-		print OUTFILE " "; 
+		&pspace;
 		&pnlsemi;
 		
 	} 
@@ -129,16 +145,16 @@ while(<INFILE>) {
 	
 	if ( $line =~ s/[(]+.*[)]+// ) {
 	$cmt = $&;
-if($debug) {	print "Comment $cmt\n"; }
+	if($debug) { print "Comment $cmt\n"; }
 	$comment = 1;
 	}
 	if ( $line =~ s/[;]+.*$//) {
 	$semicolon = 1;
 	$sccmt = $&; #save the semicolon and any comment
 	}
-	if (/\d\s/){$spaces = 1;}else{$spaces = 0;} #does this line have spaces after commands
+	if ($line =~ m/\d\s/){$spaces = 1;}else{$spaces = 0;} #does this line have spaces after commands
 #	my @words = split ' ',$line;
-	my @words =split /\s+|(?=;)|(?=[a-zA-Z]+[-.\d]+)/ ,$line;
+	my @words = split /\s+|(?=;)|(?=[a-zA-Z]+[-.\d]+)/ , $line;
 	foreach( @words){
 	if (/\d/){
 	
@@ -180,7 +196,7 @@ if($debug){				print "PROCESS MOVE BEFORE G80\n";}
 					$linenumber = $linenumber + $incr;
 					print OUTFILE "N";
 					print OUTFILE $values{"N"} + $linenumber;
-					print OUTFILE " ";
+					&pspace;
 				} 
 				} #start canned drill translation
 			print OUTFILE "$token";
@@ -196,7 +212,7 @@ if ($debug){			print "v$_ ";}
 if ($debug){			print "n$_ ";}
 				print OUTFILE "N";
 				print OUTFILE $linenumber + $';
-				print OUTFILE " ";
+				&pspace;
 			}
 		}
 	}else{
