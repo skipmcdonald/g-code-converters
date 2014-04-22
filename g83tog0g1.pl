@@ -8,9 +8,15 @@
 use strict;
 use warnings;
 
+use Getopt::Std;
+### Process arguments
+my %args;
+
+getopts ('i:o:dDs', \%args);
+
 ### Global variables...
-my $debug = 0; #print debug messages to screen
-my $debugout = 1; # include a copy of each input line as a comment in the out file.
+my $debug = $args{d}; #print debug messages to screen
+my $debugout = $args{D}; # include a copy of each input line as a comment in the out file.
 my %values = ();
 my $incr = 1; # positive incriment of line numbers - change to match input file.
 my $linenumber = 0;
@@ -126,11 +132,13 @@ my $token = "";
 my $sccmt = "";
 my $index = " ";
 my $move = 0;
-my $infile = $ARGV[0];
+my $infile =  $args{i} ? $args{i} : shift || '-';
+if($debug) {print "$infile\n";}
 open(INFILE, $infile) || die "Can't Open File: $infile\n";
 
-my $outfile = $ARGV[1];
+my $outfile = $args{o} ? $args{o} : shift || '-';
 
+if($debug) {print "$outfile\n";}
 open(OUTFILE, ">$outfile") || die "Can't Open File: $outfile\n";
 
 while(<INFILE>) {
@@ -235,7 +243,7 @@ if($debugout){
 if($debugout){ 	print OUTFILE ")" ;}
 
 	print OUTFILE "\n"; #done with this line!!
-	if (!$debug){ print ".";}
+	if (!$args{s} and !$debug){ print ".";}
 
 }
 if ($debug){print %values;}
