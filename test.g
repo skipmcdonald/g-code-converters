@@ -6,5 +6,11 @@ N50 X1.0 ;
 N60 X2 Y2.5 G80 ; do one more before deactivting the canned drill cycle.
 N70 G0 X3 Y3 Z1; not canned
 X-1.5 y3 z7 a1 B2 C3 E7 ; other axes etc. and no line number..
-
-
+G0 Z0 ; screw up traversal and see if R fixes it.
+G83 X3.0 Y3.0 Z-0.52 R0.1 Q0.1 F3.5 (X AND Y NOT REQUIRED, CAN BE PULLED FROM CURRENT POSITION) ;
+G0 X2
+N80 G0 Y2
+G1 Y4 F5.2
+G80
+G83Z-4Q1P0.51
+G80
