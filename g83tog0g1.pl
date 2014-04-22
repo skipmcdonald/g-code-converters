@@ -12,7 +12,7 @@ use Getopt::Std;
 ### Process arguments
 my %args;
 
-getopts ('i:o:dDs', \%args);
+getopts ('i:o:dDsh', \%args);
 
 ### Global variables...
 my $debug = $args{d}; #print debug messages to screen
@@ -27,6 +27,14 @@ my $ztraverse = 1; #zero is probably a bad safety height, assume Z goes negative
 my $dwell = 0; # no dwell
 my $semicolon = 0;
 
+if ($args{h}){ &HELP_MESSAGE(); exit;}
+sub HELP_MESSAGE {
+	print "\nThis perl scripts converts a file containing G83 G80 drill plans to simple G-codes( G0 G1 G4 ) that do the same thing.\nOutput format tries to match the input lines as best it can.\nThe format of the command is:\n\n";
+	print "[perl] $0 [-d -D -i {infile} -o {outfile} -s] [{infile} {outfile}\n\t -d turn on debug\n\t -D include infile lines as comments in the outfile\n\t -s turn off progress dots (used with standard out)\n\t -h prints this help text\n";
+	print "\t [-i filename] specifies an input file\n";
+	print "\t [-o filename] specifies an output file\n";
+	print "\n\nIf infile and/or outfile are omited STDIN and/or STDOUT will be used. \nThis is useful for pipe and IO redirection in scripts.\n";
+}
 sub pnlsemi { #print \n and optionaly print semicolons
 	if ($semicolon) {
 	print OUTFILE ";\n";
