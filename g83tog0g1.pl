@@ -26,6 +26,10 @@ my $ztraverse = 1; #zero is probably a bad safety height, assume Z goes negative
    $values{"Z"} = 0;  #avoid error when no value of Z exists prior to G83
 my $dwell = 0; # no dwell
 my $semicolon = 0;
+my $peckit = 0;
+my $drillit = 0;
+my $spstop = 0;
+my $feedout = 0;
 
 if ($args{h}){ &HELP_MESSAGE(); exit;}
 sub HELP_MESSAGE {
@@ -61,8 +65,13 @@ sub plnum { #print line numbers
 }
 
 
+sub drill { # set values to drill all at once with then call &peck
+	$values{Q} = $ztraverse - $values{Z};
+	&peck;
+}
+
 sub peck {
-	if($debug){print"peck\n";}
+	if($debug){print"peck $peckit\ndrill $drillit\n";}
 	print OUTFILE "G0";
 	&pspace;
 	print OUTFILE "X";
@@ -75,7 +84,6 @@ sub peck {
 	print OUTFILE $ztraverse;
 	&pspace;
 	&pnlsemi;
-	#####peck logic here....
 	&plnum;
 	print OUTFILE "G0";
 	&pspace;
@@ -100,20 +108,27 @@ sub peck {
 	&pnlsemi;
 	if($dwell > 0){
 		&plnum;
-		print OUTFILE "G4P"; ## I think P is the right dwell parameter
+		print OUTFILE "G4";
 		&pspace;
 		print OUTFILE "P"; ## I think P is the right dwell parameter
+		&pspace;
 		print OUTFILE $dwell;
 		&pspace;
 		&pnlsemi;
 	}
 	if($drilled_distance < $zhole){ $drilled_distance = $zhole;}
 		&plnum;
-	print OUTFILE "G0";
+	if($spstop){print OUTFILE "M5"; &pspace;} #stop spindle
+	print OUTFILE $feedout ? "G1" : "G0";
 	&pspace;
 	print OUTFILE "Z";
 	print OUTFILE $values{"R"};
 	&pspace;
+	if($feedout){
+		print OUTFILE "F";
+		print OUTFILE $values{"F"};
+		&pspace;
+	}
 	if($drilled_distance != $zhole){ # back into the hole if we have more to drill.
 		&pnlsemi;
 		&plnum;
@@ -126,6 +141,11 @@ sub peck {
 		
 	} 
 
+	if($spstop){
+		&plnum; 
+		print OUTFILE "M3"; 
+		&pspace; 
+		&pnlsemi;} #restart stopped spindle
 
 	}# end while..
 
@@ -184,26 +204,44 @@ while(<INFILE>) {
 				$ztraverse = 0 + $';
 			}
 		} ##fix the case where R is higher than Z traverse
+		if ( ($index eq "Q") and 0 >= $'){ die "Negative or zero Q not allowed";} 
 		if ($index eq "P"){$dwell  = 0 + $';}
 		}  ## $canned
-#		if( uc($&) eq "G"){ 
 		if( $index eq "G"){ 
 			$token = "$_ ";
 
 if($debug){		print "g$_ "; }
 			if( $' == 80) { 
+				if($canned){	$token = "";} #don't output the command
 				$canned = 0; 
-				$token = ""; #don't output the command
+				
 			# also if $moved then also process the line so far
 				if($move){
 if($debug){				print "PROCESS MOVE BEFORE G80\n";}
-					&peck;
+					if($peckit){&peck; }
+					elsif($drillit){&drill; }
+					else{ die "Unsupported Canned Cycle\n"; }
 					$move = 0; #clear the $move flag
 				} #end if ($move)
 				$dwell = 0;
+				$spstop = 0;
+				$feedout = 0;
+				$peckit = 0;
+				$drillit = 0;
 			} 
-			if($' == 83) {
+			if(($' >= 81) and ($' <= 89)) {
 				$ztraverse = $values{"Z"};
+				$dwell = 0; #dwell shouldn't be sticky
+				if ($' == 83){$peckit = 1; $feedout = 0; } 
+				if ($' == 86){$drillit = 1; $spstop = 1; $feedout = 0;}
+				if ($' == 81){$drillit = 1; $feedout =0 ; $dwell = 0;}
+				if ($' == 82){$drillit = 1; $feedout = 0; }
+				if ($' == 85){$drillit = 1; $feedout = 1; $dwell = 0; }
+				if ($' == 89){$drillit = 1; $feedout = 1; }
+				if ($' == 84){ die "G84 not supported\n"; }
+				if ($' == 87){ die "G87 not supported\n"; }
+				if ($' == 88){ die "G88 not supported\n"; }
+
 				$canned = 1;
 				$token = ""; #don't output the command
 				if($move){
@@ -213,12 +251,11 @@ if($debug){				print "PROCESS MOVE BEFORE G80\n";}
 					print OUTFILE "N";
 					print OUTFILE $values{"N"} + $linenumber;
 					&pspace;
-				} 
+				} # some command caused a move prior to G83 - give us a fresh line for aesthetics
 				} #start canned drill translation
 			print OUTFILE "$token";
 
 		}else{
-#			if(uc($&) ne "N"){ 
 			if($index ne "N"){ 
 				$move = 1; 
 if ($debug){			print "v$_ ";}
@@ -240,7 +277,12 @@ if ($debug){	print "?$_ ";}
 	}
 	
 	if($canned){
-		if($move){ &peck ;}
+		if($move){ 
+		
+			if($peckit){&peck; }
+			elsif($drillit){&drill; }
+			else{ die "Unsupported Canned Cycle\n"; }
+		}
 	}
 	if($semicolon) { print OUTFILE "$sccmt" ;}	
 if($debugout){
