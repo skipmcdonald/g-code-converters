@@ -3,11 +3,11 @@ The script tries to include formatting similar to the formatting of the input fi
 
 run the test:
 
-perl g83tog0g1.pl -D test.g out.g
+perl uncan.pl -D test.g out.g
 
 and look at the out.g file or try this test to just examine output:
 
-perl g83tog0g1.pl -s test.g | pg
+perl uncan.pl -s test.g | pg
 
 have fun.
 
