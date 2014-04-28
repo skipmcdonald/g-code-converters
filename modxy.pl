@@ -10,11 +10,14 @@ use Getopt::Std;
 ### Process arguments
 my %args;
 
-getopts ('i:o:dDsh', \%args);
+getopts ('i:o:x:y:z:dDsh', \%args);
 
 ### Global variables...
 my $debug = $args{d}; #print debug messages to screen
 my $debugout = $args{D}; # include a copy of each input line as a comment in the out file.
+my $xmax = $args{x};
+my $ymax = $args{y};
+my $zmax = $args{z};
 my %values = ();
 my $incr = 1; # positive incriment of line numbers - change to match input file.
 my $linenumber = 0;
@@ -35,6 +38,9 @@ sub HELP_MESSAGE {
 	print "[perl] $0 [-d -D -i {infile} -o {outfile} -s] [{infile} {outfile}\n\t -d turn on debug\n\t -D include infile lines as comments in the outfile\n\t -s turn off progress dots (used with standard out)\n\t -h prints this help text\n";
 	print "\t [-i filename] specifies an input file\n";
 	print "\t [-o filename] specifies an output file\n";
+	print "\t [-x value] specifies a value to adjust X by \n";
+	print "\t [-y value] specifies a value to adjust Y by\n";
+	print "\t [-z value] specifies a value to adjust Z by \n";
 	print "\n\nIf infile and/or outfile are omited STDIN and/or STDOUT will be used. \nThis is useful for pipe and IO redirection in scripts.\n";
 }
 sub pnlsemi { #print \n and optionaly print semicolons
@@ -109,8 +115,9 @@ if ($debug) {print "|$_|";}
 	   }
 	}
 }
-
-
+if (!$xmax) {$xmax = 0 - $maximums{'X'};} ## default to negative of maximum
+if (!$ymax) {$ymax = 0 - $maximums{'Y'};} ## defalut to negative of maximum
+if (!$zmax) {$zmax = 0;} ## default to 0
 foreach(@wholefile) {  
 	my $line = $_;
 	$line =~ s/\n//g; ## zap newlines
@@ -135,10 +142,12 @@ if ($debug) {print "|$_|";}
 	 	$index = uc($&);
 		$digits = 0 + $';  # the numeric value of $' not its length
 
-		if($index eq 'X') { $token = "X".($digits - $maximums{'X'}); }
-		if($index eq 'I') { $token = "I".($digits - $maximums{'X'}); }
-		if($index eq 'Y') { $token = "Y".($digits - $maximums{'Y'}); }
-		if($index eq 'J') { $token = "J".($digits - $maximums{'Y'}); }
+		if($index eq 'R') { $token = "R".($digits + $zmax); }
+		if($index eq 'Z') { $token = "Z".($digits + $zmax); }
+		if($index eq 'X') { $token = "X".($digits + $xmax); }
+		if($index eq 'I') { $token = "I".($digits + $xmax); }
+		if($index eq 'Y') { $token = "Y".($digits + $ymax); }
+		if($index eq 'J') { $token = "J".($digits + $ymax); }
 		
 
 	   }
